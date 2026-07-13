@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ORGANIZER
+  ADMIN
+}
+
+model User{
+  id String @id @default(uuid())
+  email String @unique
+  name String?
+  password String
+  role Role @default(USER)
+  organizer Organizer?
+  orders Order[]
+  reservations Reservation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Organizer{
+  id String @id @default(uuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id])
+  businessName String
+  verified Boolean @default(false)
+  events Event[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+model Event{
+  id String @id @default(uuid())
+  organizerId String
+  organizer Organizer @relation(fields: [organizerId], references: [id])
+  title String
+  description String?
+  venue String
+  startDate DateTime
+  endDate DateTime
+  status EventStatus @default(DRAFT)
+  tickets Ticket[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Ticket_Type {
+  GENERAL
+  VIP
+  VVIP
+  EARLY_BIRD
+}
+
+model Ticket{
+  id String @id @default(uuid())
+  eventId String
+  event Event @relation(fields: [eventId], references: [id])
+  name Ticket_Type @default(GENERAL)
+  price Decimal
+  quantity Int
+  reserved Int @default(0)
+  sold Int @default(0)
+  reservations Reservation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ReservationStatus {
+  HELD       
+  CONFIRMED  
+  EXPIRED   
+  RELEASED 
+}
+
+model Reservation{
+  id String @id @default(uuid())
+  ticketId String
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  userId String
+  user User @relation(fields: [userId], references: [id])
+  quantity Int
+  idempotencyKey String @unique
+  expiresAt DateTime
+  status ReservationStatus @default(HELD)
+  order Order?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Order{
+  id String @id @default(uuid())
+  reservationId String @unique
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+  userId String
+  user User @relation(fields: [userId], references: [id])
+  amount Decimal
+  paymentReference String? @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
