@@ -4,13 +4,11 @@ import { AuthService } from './auth.service';
 import { TokenUtils } from './utils/auth.util';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
-import { PrismaService } from '../prisma.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly prismaService: PrismaService,
     private readonly tokenUtils: TokenUtils,
     private readonly configService: ConfigService,
   ) {}
