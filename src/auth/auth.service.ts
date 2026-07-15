@@ -4,10 +4,14 @@ import { RegisterDto } from './dto/register.dto';
 import bcrypt from 'bcrypt';
 import { User } from '../../generated/prisma/client';
 import crypto from 'crypto';
+import { TokenUtils } from './utils/auth.util';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly tokenUtils: TokenUtils,
+  ) {}
 
   async registerService(
     registerDto: RegisterDto,
@@ -43,5 +47,19 @@ export class AuthService {
     await this.prismaService.refreshToken.create({
       data: { token: hash, userId, expiresAt },
     });
+  }
+
+  async createEmailVerificationToken(
+    userId: string,
+    expiresAt: Date,
+  ): Promise<string> {
+    const token = crypto.randomInt(100000, 999999).toString();
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+    await this.prismaService.emailVerificationToken.create({
+      data: { token: hash, userId, expiresAt },
+    });
+
+    return token;
   }
 }
