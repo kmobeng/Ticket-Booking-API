@@ -5,8 +5,10 @@ import { PrismaService } from '../prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { TokenUtils } from './utils/auth.util';
+import { OutboxModule } from '../outbox/outbox.module';
 
 @Module({
+  imports: [OutboxModule],
   controllers: [AuthController],
   providers: [
     AuthService,

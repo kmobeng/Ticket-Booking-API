@@ -20,22 +20,7 @@ export class AuthController {
   ) {
     const user = await this.authService.registerService(registerDto);
 
-    const refreshToken = this.tokenUtils.generateRefreshToken({
-      sub: user.id,
-    });
-
-    await this.authService.createRefreshToken(
-      refreshToken,
-      user.id,
-      new Date(
-        Date.now() +
-          this.configService.get('REFRESH_JWT_COOKIE_EXPIRES_IN') *
-            24 *
-            60 *
-            60 *
-            1000,
-      ),
-    );
+    const { refreshToken, ...userWithoutRefreshToken } = user;
 
     this.tokenUtils.sendRefreshToken(res, refreshToken);
     const token = this.tokenUtils.generateAccessToken({
@@ -47,7 +32,7 @@ export class AuthController {
     return {
       success: true,
       token,
-      data: user,
+      data: userWithoutRefreshToken,
     };
   }
 }
