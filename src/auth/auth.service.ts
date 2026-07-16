@@ -6,12 +6,14 @@ import { User } from '../../generated/prisma/client';
 import crypto from 'crypto';
 import { TokenUtils } from './utils/auth.util';
 import { OutboxService } from '../outbox/outbox.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly tokenUtils: TokenUtils,
+    private readonly configService: ConfigService,
     private readonly outboxService: OutboxService,
   ) {}
 
@@ -54,7 +56,7 @@ export class AuthService {
           userId: user.id,
           expiresAt: new Date(
             Date.now() +
-              parseInt(process.env.REFRESH_JWT_COOKIE_EXPIRES_IN || '7') *
+              Number(this.configService.get('REFRESH_JWT_COOKIE_EXPIRES_IN')) *
                 24 *
                 60 *
                 60 *
@@ -90,5 +92,105 @@ export class AuthService {
       const { password: _, ...userWithoutPassword } = user;
       return { ...userWithoutPassword, refreshToken };
     });
+  }
+
+  async loginService(
+    email: string,
+    password: string,
+  ): Promise<Omit<User, 'password'> & { refreshToken: string }> {
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new ConflictException('Invalid email or password');
+    }
+
+    const refreshToken = this.tokenUtils.generateRefreshToken({
+      sub: user.id,
+    });
+
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
+
+    await this.prismaService.refreshToken.create({
+      data: {
+        token: hashedToken,
+        userId: user.id,
+        expiresAt: new Date(
+          Date.now() +
+            Number(this.configService.get('REFRESH_JWT_COOKIE_EXPIRES_IN')) *
+              24 *
+              60 *
+              60 *
+              1000,
+        ),
+      },
+    });
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { ...userWithoutPassword, refreshToken };
+  }
+
+  async refreshTokenService(
+    hashRefreshToken: string,
+    userId: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    // Check if the refresh token exists and is valid
+    const refreshTokenRecord = await this.prismaService.refreshToken.findFirst({
+      where: {
+        token: hashRefreshToken,
+        userId,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!refreshTokenRecord || refreshTokenRecord.expiresAt < new Date()) {
+      throw new ConflictException('Invalid or expired refresh token');
+    }
+
+    // Generate new access and refresh tokens
+    const accessPayload = {
+      sub: refreshTokenRecord.user.id,
+      email: refreshTokenRecord.user.email,
+      role: refreshTokenRecord.user.role,
+    };
+
+    const newAccessToken = this.tokenUtils.generateAccessToken(accessPayload);
+
+    const newRefreshToken = this.tokenUtils.generateRefreshToken({
+      sub: refreshTokenRecord.user.id,
+    });
+
+    // Hash the new refresh token before storing it
+    const newHashedRefreshToken = crypto
+      .createHash('sha256')
+      .update(newRefreshToken)
+      .digest('hex');
+
+    await this.prismaService.refreshToken.update({
+      where: { id: refreshTokenRecord.id },
+      data: {
+        token: newHashedRefreshToken,
+        expiresAt: new Date(
+          Date.now() +
+            Number(this.configService.get('REFRESH_JWT_COOKIE_EXPIRES_IN')) *
+              24 *
+              60 *
+              60 *
+              1000,
+        ),
+      },
+    });
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
 }

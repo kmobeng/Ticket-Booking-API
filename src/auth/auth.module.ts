@@ -6,9 +6,10 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { TokenUtils } from './utils/auth.util';
 import { OutboxModule } from '../outbox/outbox.module';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
-  imports: [OutboxModule],
+  imports: [OutboxModule, RedisModule],
   controllers: [AuthController],
   providers: [
     AuthService,

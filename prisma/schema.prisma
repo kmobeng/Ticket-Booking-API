@@ -148,6 +148,8 @@ model RefreshToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, token])
 }
 
 model EmailVerificationToken {

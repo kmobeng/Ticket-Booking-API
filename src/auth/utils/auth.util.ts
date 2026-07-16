@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import {
@@ -6,6 +6,7 @@ import {
   RefreshJWTPayload,
 } from '../interfaces/jwt.interface';
 import type { Response } from 'express';
+import uuid from 'uuid';
 
 @Injectable()
 export class TokenUtils {
@@ -35,6 +36,9 @@ export class TokenUtils {
   }
 
   generateAccessToken(payload: AccessJWTPayload): string {
+    const jti = uuid.v4();
+    payload.jti = jti;
+
     const token = this.jwtService.sign(payload, {
       secret: this.configService.get('JWT_SECRET'),
       expiresIn: this.configService.get('JWT_EXPIRES_IN'),
@@ -53,5 +57,27 @@ export class TokenUtils {
       expiresIn: this.configService.get('REFRESH_JWT_EXPIRES_IN'),
     });
     return refreshToken;
+  }
+
+  verifyAccessToken(token: string): AccessJWTPayload {
+    try {
+      const payload = this.jwtService.verify<AccessJWTPayload>(token, {
+        secret: this.configService.get('JWT_SECRET'),
+      });
+      return payload;
+    } catch (_error) {
+      throw new UnauthorizedException('Invalid or expired access token');
+    }
+  }
+
+  verifyRefreshToken(token: string): RefreshJWTPayload {
+    try {
+      const payload = this.jwtService.verify<RefreshJWTPayload>(token, {
+        secret: this.configService.get('REFRESH_JWT_SECRET'),
+      });
+      return payload;
+    } catch (_error) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
   }
 }

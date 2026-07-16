@@ -29,15 +29,11 @@ export class OutboxPoller {
       orderBy: { createdAt: 'asc' },
       take: 50,
     })) as OutboxEvent[];
-    this.logger.debug(`Found ${events.length} unprocessed outbox events`);
 
     if (events.length === 0) return;
 
     for (const event of events) {
       try {
-        this.logger.debug(
-          `Dispatching outbox event ${event.id} of type ${event.eventType}`,
-        );
         await this.handleEvent(event);
         await this.prisma.outboxEvent.update({
           where: { id: event.id },
