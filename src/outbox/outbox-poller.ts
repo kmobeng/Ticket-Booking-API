@@ -53,6 +53,12 @@ export class OutboxPoller {
           token: event.payload.verificationToken,
         });
         break;
+      case 'password_reset_requested':
+        await this.notificationService.enqueuePasswordReset({
+          to: event.payload.email,
+          token: event.payload.resetToken,
+        });
+        break;
     }
   }
 }

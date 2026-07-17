@@ -2,11 +2,15 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { EmailService } from '../common/utils/email.util';
+import { ConfigService } from '@nestjs/config';
 
 @Processor('notification')
 export class NotificationProcessor extends WorkerHost {
   private readonly logger = new Logger(NotificationProcessor.name);
-  constructor(private readonly emailService: EmailService) {
+  constructor(
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
+  ) {
     super();
   }
 
@@ -20,6 +24,21 @@ export class NotificationProcessor extends WorkerHost {
         await this.emailService.sendEmailDev({
           email: to,
           subject: 'Email Verification (Expired in 10 minutes)',
+          message: message,
+        });
+        break;
+      }
+      case 'send-password-reset': {
+        const { to, token } = job.data;
+
+        const resetURL = `${this.configService.get('APP_URL')}/reset-password.html?token=${token}`;
+
+        const message = `You requested a password reset. Please click on the following link to reset your password: ${resetURL}
+       This link is valid for 10 minutes. If you did not request this, please ignore this email.`;
+
+        await this.emailService.sendEmailDev({
+          email: to,
+          subject: 'Password Reset Request (Expired in 10 minutes)',
           message: message,
         });
         break;

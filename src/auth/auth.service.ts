@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import bcrypt from 'bcrypt';
@@ -7,6 +11,7 @@ import crypto from 'crypto';
 import { TokenUtils } from './utils/auth.util';
 import { OutboxService } from '../outbox/outbox.service';
 import { ConfigService } from '@nestjs/config';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +20,7 @@ export class AuthService {
     private readonly tokenUtils: TokenUtils,
     private readonly configService: ConfigService,
     private readonly outboxService: OutboxService,
+    private readonly redisService: RedisService,
   ) {}
 
   async registerService(
@@ -192,5 +198,91 @@ export class AuthService {
     });
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  }
+
+  async logoutService(
+    userId: string,
+    token: string,
+    remainingTTl: number,
+    jti: string,
+  ): Promise<void> {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    await this.prismaService.refreshToken.deleteMany({
+      where: {
+        userId,
+        token: hashedToken,
+      },
+    });
+
+    if (remainingTTl > 0) {
+      await this.redisService
+        .getClient()
+        .set(`blacklist:${jti}`, 'true', 'EX', remainingTTl);
+    }
+  }
+
+  async forgotPasswordService(email: string): Promise<void> {
+    // Check if the user exists
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return;
+    }
+
+    // Generate a random token for password reset
+    const token = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          token: hashedToken,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        },
+      });
+
+      // Create an outbox event for the password reset request
+      await this.outboxService.createEvent(tx, {
+        aggregateId: user.id,
+        aggregateType: 'user',
+        eventType: 'password_reset_requested',
+        payload: {
+          email: user.email,
+          resetToken: token,
+        },
+      });
+    });
+  }
+
+  async resetPasswordService(token: string, password): Promise<void> {
+    const tokenExist = await this.prismaService.passwordResetToken.findUnique({
+      where: { token },
+    });
+
+    if (!tokenExist || tokenExist.expiresAt < new Date()) {
+      throw new BadRequestException('Invalid or expired reset url');
+    }
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: tokenExist.userId },
+        data: {
+          password,
+          passwordChangedAt: new Date(),
+        },
+      });
+
+      await tx.passwordResetToken.deleteMany({
+        where: { userId: tokenExist.userId },
+      });
+
+      await tx.refreshToken.deleteMany({
+        where: { userId: tokenExist.userId },
+      });
+    });
   }
 }

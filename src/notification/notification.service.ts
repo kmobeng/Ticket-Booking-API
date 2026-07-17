@@ -13,7 +13,10 @@ export class NotificationService {
   constructor(@InjectQueue('notification') private notificationsQueue: Queue) {}
 
   async enqueueEmailVerification(data: EmailVerificationData): Promise<void> {
-    this.logger.debug(`Enqueuing email verification for ${data.to}`);
     await this.notificationsQueue.add('send-email-verification', data);
+  }
+
+  async enqueuePasswordReset(data: EmailVerificationData): Promise<void> {
+    await this.notificationsQueue.add('send-password-reset', data);
   }
 }

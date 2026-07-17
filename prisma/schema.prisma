@@ -25,11 +25,16 @@ model User{
   name String?
   password String
   role Role @default(USER)
+  provider  String?   @default("local")
+  needToChangePassword Boolean @default(false)
+  isEmailVerified Boolean @default(false)
   organizer Organizer?
   orders Order[]
   reservations Reservation[]
   refreshTokens RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  passwordChangedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -153,6 +158,16 @@ model RefreshToken {
 }
 
 model EmailVerificationToken {
+  id String @id @default(uuid())
+  userId String 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token String @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PasswordResetToken {
   id String @id @default(uuid())
   userId String 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

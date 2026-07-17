@@ -2,21 +2,22 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Get,
   Post,
   Req,
   Res,
   UseGuards,
+  Param,
 } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
 import { TokenUtils } from './utils/auth.util';
 import type { Response, Request } from 'express';
 import { LoginDto } from './dto/login.dto';
-import { JwtAuthGuard } from './guards/auth-guard';
-import { currentUser } from './decorators/currentUser.decorator';
-import type { AccessJWTPayload } from './interfaces/jwt.interface';
 import crypto from 'crypto';
+import { JwtAuthGuard } from './guards/auth-guard';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import bcrypt from 'bcrypt';
 
 @Controller('auth')
 export class AuthController {
@@ -74,6 +75,7 @@ export class AuthController {
     };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('refresh')
   async refreshToken(
     @Req() req: Request,
@@ -95,5 +97,65 @@ export class AuthController {
     this.tokenUtils.sendRefreshToken(res, newRefreshToken);
 
     return { success: true, accessToken: newAccessToken };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
+    const token = req.cookies['refreshToken'];
+
+    if (!token) {
+      throw new BadRequestException('Refresh token is missing');
+    }
+
+    const payload = this.tokenUtils.verifyRefreshToken(token);
+
+    const { jti } = this.tokenUtils.verifyAccessToken(
+      req.headers.authorization?.split(' ')[1] || '',
+    );
+
+    const remainingTTl = payload.exp! - Math.floor(Date.now() / 1000);
+
+    await this.authService.logoutService(
+      payload.sub,
+      token,
+      remainingTTl,
+      jti!,
+    );
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    });
+
+    return { success: true, message: 'Logged out successfully' };
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    await this.authService.forgotPasswordService(body.email);
+
+    return {
+      success: true,
+      message:
+        'If an email with this account exist, a reset url has been sent to the email address.',
+    };
+  }
+
+  @Post('reset-password:token')
+  async resetPassword(@Body() body: ResetPasswordDto, @Param() token: string) {
+    const hashToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const { password } = body;
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await this.authService.resetPasswordService(hashToken, hashedPassword);
+
+    return {
+      success: true,
+      message:
+        'Password has been reset successfully. You can now log in with your new password.',
+    };
   }
 }
