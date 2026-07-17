@@ -1,4 +1,8 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import nodemailer, { Transporter } from 'nodemailer';
 import { Logger } from '@nestjs/common';
@@ -40,6 +44,7 @@ export class EmailService implements OnModuleInit {
       });
     } catch (err) {
       this.logger.error(`Failed to send email to ${options.email}`, err);
+      throw new InternalServerErrorException('Failed to send email');
     }
   }
 }

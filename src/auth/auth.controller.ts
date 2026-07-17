@@ -18,6 +18,8 @@ import { JwtAuthGuard } from './guards/auth-guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import bcrypt from 'bcrypt';
+import { currentUser } from './decorators/currentUser.decorator';
+import type { AccessJWTPayload } from './interfaces/jwt.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -40,6 +42,7 @@ export class AuthController {
       sub: user.id,
       email: user.email,
       role: user.role,
+      isEmailVerified: user.isEmailVerified,
     });
 
     return {
@@ -66,6 +69,7 @@ export class AuthController {
       sub: user.id,
       email: user.email,
       role: user.role,
+      isEmailVerified: user.isEmailVerified,
     });
 
     return {
@@ -143,8 +147,11 @@ export class AuthController {
     };
   }
 
-  @Post('reset-password:token')
-  async resetPassword(@Body() body: ResetPasswordDto, @Param() token: string) {
+  @Post('reset-password/:token')
+  async resetPassword(
+    @Body() body: ResetPasswordDto,
+    @Param('token') token: string,
+  ) {
     const hashToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const { password } = body;
@@ -156,6 +163,54 @@ export class AuthController {
       success: true,
       message:
         'Password has been reset successfully. You can now log in with your new password.',
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('request-email-verification')
+  async requestEmailVerification(@currentUser() user: AccessJWTPayload) {
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    await this.authService.requestEmailVerificationService(
+      user.email,
+      user.sub,
+    );
+
+    return {
+      success: true,
+      message:
+        'If an email with this account exist, a verification token has been sent to the email address.',
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-email/:token')
+  async verifyEmail(
+    @Param('token') token: string,
+    @currentUser() user: AccessJWTPayload,
+  ) {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    await this.authService.verifyEmailTokenService(
+      hashedToken,
+      user.sub,
+      user.jti!,
+      user.exp! - Math.floor(Date.now() / 1000),
+    );
+
+    const newToken = this.tokenUtils.generateAccessToken({
+      sub: user.sub,
+      email: user.email,
+      role: user.role,
+      isEmailVerified: true,
+    });
+
+    return {
+      success: true,
+      token: newToken,
+      message: 'Email verified successfully.',
     };
   }
 }

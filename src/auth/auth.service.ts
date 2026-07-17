@@ -71,11 +71,8 @@ export class AuthService {
         },
       });
 
-      const token = crypto.randomInt(100000, 999999).toString();
-      const hashedVerificationToken = crypto
-        .createHash('sha256')
-        .update(token)
-        .digest('hex');
+      const { token, hashedToken: hashedVerificationToken } =
+        this.emailTokenGeneration();
 
       await tx.emailVerificationToken.create({
         data: {
@@ -98,6 +95,12 @@ export class AuthService {
       const { password: _, ...userWithoutPassword } = user;
       return { ...userWithoutPassword, refreshToken };
     });
+  }
+
+  private emailTokenGeneration(): { token: string; hashedToken: string } {
+    const token = crypto.randomInt(100000, 999999).toString();
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    return { token, hashedToken };
   }
 
   async loginService(
@@ -168,6 +171,7 @@ export class AuthService {
       sub: refreshTokenRecord.user.id,
       email: refreshTokenRecord.user.email,
       role: refreshTokenRecord.user.role,
+      isEmailVerified: refreshTokenRecord.user.isEmailVerified,
     };
 
     const newAccessToken = this.tokenUtils.generateAccessToken(accessPayload);
@@ -258,7 +262,7 @@ export class AuthService {
     });
   }
 
-  async resetPasswordService(token: string, password): Promise<void> {
+  async resetPasswordService(token: string, password: string): Promise<void> {
     const tokenExist = await this.prismaService.passwordResetToken.findUnique({
       where: { token },
     });
@@ -284,5 +288,72 @@ export class AuthService {
         where: { userId: tokenExist.userId },
       });
     });
+  }
+
+  async requestEmailVerificationService(
+    email: string,
+    userId: string,
+  ): Promise<void> {
+    const { token, hashedToken: hashedVerificationToken } =
+      this.emailTokenGeneration();
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.emailVerificationToken.create({
+        data: {
+          userId,
+          token: hashedVerificationToken,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+        },
+      });
+
+      await this.outboxService.createEvent(tx, {
+        aggregateId: userId,
+        aggregateType: 'user',
+        eventType: 'user_registered',
+        payload: {
+          email,
+          verificationToken: token,
+        },
+      });
+    });
+  }
+
+  async verifyEmailTokenService(
+    token: string,
+    userId: string,
+    jti: string,
+    ttl: number,
+  ): Promise<void> {
+    const tokenExist =
+      await this.prismaService.emailVerificationToken.findUnique({
+        where: { token },
+      });
+
+    if (
+      !tokenExist ||
+      tokenExist.expiresAt < new Date() ||
+      tokenExist.userId !== userId
+    ) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          isEmailVerified: true,
+        },
+      });
+
+      await tx.emailVerificationToken.deleteMany({
+        where: { userId },
+      });
+    });
+
+    if (ttl > 0) {
+      await this.redisService
+        .getClient()
+        .set(`blacklist:${jti}`, 'true', 'EX', ttl);
+    }
   }
 }

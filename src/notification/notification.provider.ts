@@ -19,7 +19,7 @@ export class NotificationProcessor extends WorkerHost {
       case 'send-email-verification': {
         const { to, token } = job.data;
 
-        const message = `Thank you for registering! Please verify your email using the following token: ${token}. This token will expire in 10 minutes.`;
+        const message = `Please verify your email using the following token: ${token}. This token will expire in 10 minutes.`;
 
         await this.emailService.sendEmailDev({
           email: to,
@@ -31,7 +31,7 @@ export class NotificationProcessor extends WorkerHost {
       case 'send-password-reset': {
         const { to, token } = job.data;
 
-        const resetURL = `${this.configService.get('APP_URL')}/reset-password.html?token=${token}`;
+        const resetURL = `${this.configService.get('APP_URL')}/reset-password/${token}`;
 
         const message = `You requested a password reset. Please click on the following link to reset your password: ${resetURL}
        This link is valid for 10 minutes. If you did not request this, please ignore this email.`;
