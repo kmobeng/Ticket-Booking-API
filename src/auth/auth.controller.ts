@@ -15,12 +15,12 @@ import { TokenUtils } from './utils/auth.util';
 import type { Response, Request } from 'express';
 import { LoginDto } from './dto/login.dto';
 import crypto from 'crypto';
-import { JwtAuthGuard } from './guards/auth.guard';
+import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import bcrypt from 'bcrypt';
-import { currentUser } from './decorators/currentUser.decorator';
-import type { AccessJWTPayload } from './interfaces/jwt.interface';
+import { currentUser } from '../common/decorators/currentUser.decorator';
+import type { AccessJWTPayload } from '../common/interfaces/jwt.interface';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from '../../generated/prisma/client';
 

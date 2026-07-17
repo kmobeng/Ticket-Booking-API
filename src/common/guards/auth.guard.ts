@@ -4,7 +4,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import { TokenUtils } from '../utils/auth.util';
+import { TokenUtils } from '../../auth/utils/auth.util';
 import { RedisService } from '../../redis/redis.service';
 
 @Injectable()

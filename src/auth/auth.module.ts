@@ -27,5 +27,6 @@ import { PassportModule } from '@nestjs/passport';
     TokenUtils,
     GoogleAuthStrategy,
   ],
+  exports: [TokenUtils],
 })
 export class AuthModule {}

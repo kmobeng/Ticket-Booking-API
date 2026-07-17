@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import {
   AccessJWTPayload,
   RefreshJWTPayload,
-} from '../interfaces/jwt.interface';
+} from '../../common/interfaces/jwt.interface';
 import type { Response } from 'express';
 import uuid from 'uuid';
 

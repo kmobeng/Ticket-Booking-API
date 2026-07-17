@@ -8,6 +8,8 @@ import { QueueModule } from './queue/queue.module';
 import { NotificationModule } from './notification/notification.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { UsersModule } from './users/users.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     QueueModule,
     NotificationModule,
     OutboxModule,
+    UsersModule,
+    CommonModule,
   ],
   controllers: [AppController],
   providers: [AppService],
