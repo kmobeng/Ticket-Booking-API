@@ -15,7 +15,7 @@ import { TokenUtils } from './utils/auth.util';
 import type { Response, Request } from 'express';
 import { LoginDto } from './dto/login.dto';
 import crypto from 'crypto';
-import { JwtAuthGuard } from './guards/auth-guard';
+import { JwtAuthGuard } from './guards/auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import bcrypt from 'bcrypt';
@@ -228,7 +228,10 @@ export class AuthController {
 
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+  async googleAuthRedirect(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const user = req.user as User & { authAction: 'login' | 'register' };
 
     const payload: AccessJWTPayload = {
