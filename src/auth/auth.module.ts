@@ -7,9 +7,17 @@ import { JwtService } from '@nestjs/jwt';
 import { TokenUtils } from './utils/auth.util';
 import { OutboxModule } from '../outbox/outbox.module';
 import { RedisModule } from '../redis/redis.module';
+import { GoogleAuthStrategy } from './strategies/google-auth.strategy';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
-  imports: [OutboxModule, RedisModule],
+  imports: [
+    OutboxModule,
+    RedisModule,
+    PassportModule.register({
+      session: false,
+    }),
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -17,6 +25,7 @@ import { RedisModule } from '../redis/redis.module';
     ConfigService,
     JwtService,
     TokenUtils,
+    GoogleAuthStrategy,
   ],
 })
 export class AuthModule {}

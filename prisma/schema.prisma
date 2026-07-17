@@ -19,8 +19,14 @@ enum Role {
   ADMIN
 }
 
+enum Provider {
+  local
+  google
+}
+
 model User{
   id String @id @default(uuid())
+  googleId String? @unique
   email String @unique
   name String?
   password String

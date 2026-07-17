@@ -9,6 +9,7 @@ export interface AccessJWTPayload {
   email: string;
   role: string;
   isEmailVerified: boolean;
+  needToChangePassword: boolean;
   jti?: string;
   iat?: number;
   exp?: number;

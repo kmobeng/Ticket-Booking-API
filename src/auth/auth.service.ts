@@ -172,6 +172,7 @@ export class AuthService {
       email: refreshTokenRecord.user.email,
       role: refreshTokenRecord.user.role,
       isEmailVerified: refreshTokenRecord.user.isEmailVerified,
+      needToChangePassword: refreshTokenRecord.user.needToChangePassword,
     };
 
     const newAccessToken = this.tokenUtils.generateAccessToken(accessPayload);
@@ -355,5 +356,30 @@ export class AuthService {
         .getClient()
         .set(`blacklist:${jti}`, 'true', 'EX', ttl);
     }
+  }
+
+  async createRefreshToken(
+    refreshToken: string,
+    userId: string,
+  ): Promise<void> {
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
+
+    await this.prismaService.refreshToken.create({
+      data: {
+        token: hashedToken,
+        userId,
+        expiresAt: new Date(
+          Date.now() +
+            Number(this.configService.get('REFRESH_JWT_COOKIE_EXPIRES_IN')) *
+              24 *
+              60 *
+              60 *
+              1000,
+        ),
+      },
+    });
   }
 }

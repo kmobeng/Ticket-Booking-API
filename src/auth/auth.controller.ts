@@ -7,6 +7,7 @@ import {
   Res,
   UseGuards,
   Param,
+  Get,
 } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
@@ -20,6 +21,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import bcrypt from 'bcrypt';
 import { currentUser } from './decorators/currentUser.decorator';
 import type { AccessJWTPayload } from './interfaces/jwt.interface';
+import { AuthGuard } from '@nestjs/passport';
+import { User } from '../../generated/prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -43,6 +46,7 @@ export class AuthController {
       email: user.email,
       role: user.role,
       isEmailVerified: user.isEmailVerified,
+      needToChangePassword: user.needToChangePassword,
     });
 
     return {
@@ -70,6 +74,7 @@ export class AuthController {
       email: user.email,
       role: user.role,
       isEmailVerified: user.isEmailVerified,
+      needToChangePassword: user.needToChangePassword,
     });
 
     return {
@@ -205,12 +210,53 @@ export class AuthController {
       email: user.email,
       role: user.role,
       isEmailVerified: true,
+      needToChangePassword: user.needToChangePassword,
     });
 
     return {
       success: true,
       token: newToken,
       message: 'Email verified successfully.',
+    };
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Initiates the Google OAuth2 login flow
+  }
+
+  @Get('google/redirect')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    const user = req.user as User & { authAction: 'login' | 'register' };
+
+    const payload: AccessJWTPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
+      needToChangePassword: user.needToChangePassword,
+    };
+
+    const token = this.tokenUtils.generateAccessToken(payload);
+
+    const refreshToken = this.tokenUtils.generateRefreshToken(payload);
+
+    await this.authService.createRefreshToken(refreshToken, user.id);
+
+    this.tokenUtils.sendRefreshToken(res, refreshToken);
+
+    const { password: _, authAction: __, ...userWithoutPassword } = user;
+
+    return {
+      success: true,
+      token,
+      message:
+        user.authAction === 'login'
+          ? 'Logged in successfully'
+          : 'Registered successfully. Please change your password to continue.',
+      data: userWithoutPassword,
     };
   }
 }
