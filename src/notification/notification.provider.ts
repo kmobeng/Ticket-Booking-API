@@ -43,6 +43,18 @@ export class NotificationProcessor extends WorkerHost {
         });
         break;
       }
+      case 'send-email-update': {
+        const { to, token } = job.data;
+
+        const message = `Your email update request has been received. Please verify your new email using the following token: ${token}. This token will expire in 10 minutes.`;
+
+        await this.emailService.sendEmailDev({
+          email: to,
+          subject: 'Email Update Verification (Expired in 10 minutes)',
+          message: message,
+        });
+        break;
+      }
     }
   }
 }

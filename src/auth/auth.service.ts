@@ -97,7 +97,7 @@ export class AuthService {
     });
   }
 
-  private emailTokenGeneration(): { token: string; hashedToken: string } {
+  emailTokenGeneration(): { token: string; hashedToken: string } {
     const token = crypto.randomInt(100000, 999999).toString();
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     return { token, hashedToken };

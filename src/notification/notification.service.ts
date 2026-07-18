@@ -19,4 +19,8 @@ export class NotificationService {
   async enqueuePasswordReset(data: EmailVerificationData): Promise<void> {
     await this.notificationsQueue.add('send-password-reset', data);
   }
+
+  async enqueueEmailUpdate(data: EmailVerificationData): Promise<void> {
+    await this.notificationsQueue.add('send-email-update', data);
+  }
 }

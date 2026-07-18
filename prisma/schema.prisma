@@ -34,6 +34,7 @@ model User{
   provider  String?   @default("local")
   needToChangePassword Boolean @default(false)
   isEmailVerified Boolean @default(false)
+  pendingEmail String? @unique
   organizer Organizer?
   orders Order[]
   reservations Reservation[]
