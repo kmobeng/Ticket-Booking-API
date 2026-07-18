@@ -7,6 +7,10 @@ type EmailVerificationData = {
   token: string;
 };
 
+type PasswordChangeData = {
+  email: string;
+};
+
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
@@ -22,5 +26,13 @@ export class NotificationService {
 
   async enqueueEmailUpdate(data: EmailVerificationData): Promise<void> {
     await this.notificationsQueue.add('send-email-update', data);
+  }
+
+  async enqueuePasswordChange(data: PasswordChangeData): Promise<void> {
+    await this.notificationsQueue.add('send-password-change', data);
+  }
+
+  async enqueueEmailSetPassword(data: PasswordChangeData): Promise<void> {
+    await this.notificationsQueue.add('send-password-set', data);
   }
 }

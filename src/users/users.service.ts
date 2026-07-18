@@ -141,4 +141,77 @@ export class UsersService {
 
     return user;
   }
+
+  async updatePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    email: string,
+    jti: string,
+    remainingTTL: number,
+  ): Promise<void> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      select: { password: true },
+    });
+
+    if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
+      throw new NotFoundException('Incorrect current password');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          password: hashedPassword,
+          passwordChangedAt: new Date(),
+        },
+      });
+
+      await tx.refreshToken.deleteMany({
+        where: { userId },
+      });
+
+      await this.outboxService.createEvent(tx, {
+        aggregateType: 'user',
+        aggregateId: userId,
+        eventType: 'password-changed',
+        payload: { email },
+      });
+    });
+
+    if (remainingTTL > 0) {
+      await this.redisService
+        .getClient()
+        .set(`blacklist:${jti}`, 'true', 'EX', remainingTTL);
+    }
+  }
+
+  async setPassword(
+    userId: string,
+    newPassword: string,
+    email: string,
+  ): Promise<void> {
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          password: hashedPassword,
+          passwordChangedAt: new Date(),
+          needToChangePassword: false,
+        },
+      });
+
+      await this.outboxService.createEvent(tx, {
+        aggregateType: 'user',
+        aggregateId: userId,
+        eventType: 'password-set',
+        payload: { email },
+      });
+    });
+  }
 }

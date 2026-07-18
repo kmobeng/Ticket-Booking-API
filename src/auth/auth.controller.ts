@@ -45,6 +45,7 @@ export class AuthController {
       sub: user.id,
       email: user.email,
       role: user.role,
+      provider: user.provider!,
       isEmailVerified: user.isEmailVerified,
       needToChangePassword: user.needToChangePassword,
     });
@@ -73,6 +74,7 @@ export class AuthController {
       sub: user.id,
       email: user.email,
       role: user.role,
+      provider: user.provider!,
       isEmailVerified: user.isEmailVerified,
       needToChangePassword: user.needToChangePassword,
     });
@@ -110,26 +112,24 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
+  async logout(
+    @currentUser() user: AccessJWTPayload,
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
     const token = req.cookies['refreshToken'];
 
     if (!token) {
       throw new BadRequestException('Refresh token is missing');
     }
 
-    const payload = this.tokenUtils.verifyRefreshToken(token);
-
-    const { jti } = this.tokenUtils.verifyAccessToken(
-      req.headers.authorization?.split(' ')[1] || '',
-    );
-
-    const remainingTTl = payload.exp! - Math.floor(Date.now() / 1000);
+    const remainingTTl = user.exp! - Math.floor(Date.now() / 1000);
 
     await this.authService.logoutService(
-      payload.sub,
+      user.sub,
       token,
       remainingTTl,
-      jti!,
+      user.jti!,
     );
 
     res.clearCookie('refreshToken', {
@@ -209,6 +209,7 @@ export class AuthController {
       sub: user.sub,
       email: user.email,
       role: user.role,
+      provider: user.provider,
       isEmailVerified: true,
       needToChangePassword: user.needToChangePassword,
     });
@@ -238,6 +239,7 @@ export class AuthController {
       sub: user.id,
       email: user.email,
       role: user.role,
+      provider: user.provider!,
       isEmailVerified: user.isEmailVerified,
       needToChangePassword: user.needToChangePassword,
     };

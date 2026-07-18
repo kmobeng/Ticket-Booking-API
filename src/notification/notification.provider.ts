@@ -55,6 +55,32 @@ export class NotificationProcessor extends WorkerHost {
         });
         break;
       }
+      case 'send-password-change': {
+        const { email } = job.data;
+
+        const message = `Your password has been changed successfully. If you did not perform this action, please contact support immediately.`;
+
+        await this.emailService.sendEmailDev({
+          email: email,
+          subject: 'Password Change Notification',
+          message: message,
+        });
+        break;
+      }
+      case 'send-password-set': {
+        const { email } = job.data;
+
+        const message = `Your password has been set successfully. If you did not perform this action, please contact support immediately.`;
+
+        await this.emailService.sendEmailDev({
+          email: email,
+          subject: 'Password Set Notification',
+          message: message,
+        });
+        break;
+      }
+      default:
+        this.logger.warn(`No handler for job name: ${job.name}`);
     }
   }
 }

@@ -171,6 +171,7 @@ export class AuthService {
       sub: refreshTokenRecord.user.id,
       email: refreshTokenRecord.user.email,
       role: refreshTokenRecord.user.role,
+      provider: refreshTokenRecord.user.provider!,
       isEmailVerified: refreshTokenRecord.user.isEmailVerified,
       needToChangePassword: refreshTokenRecord.user.needToChangePassword,
     };
@@ -211,6 +212,8 @@ export class AuthService {
     remainingTTl: number,
     jti: string,
   ): Promise<void> {
+    this.tokenUtils.verifyRefreshToken(token);
+
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     await this.prismaService.refreshToken.deleteMany({

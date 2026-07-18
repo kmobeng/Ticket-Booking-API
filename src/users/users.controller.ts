@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, UseGuards, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  UseGuards,
+  Body,
+  Param,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { currentUser } from '../common/decorators/currentUser.decorator';
 import type { AccessJWTPayload } from '../common/interfaces/jwt.interface';
@@ -8,6 +16,8 @@ import { NeedToChangePasswordGuard } from '../common/guards/need-to-change-passw
 import { UpdateMeDto } from './dto/update-user.dto';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { TokenUtils } from '../auth/utils/auth.util';
+import { UpdatePasswordDto } from './dto/update-password.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
 
 @Controller('users')
 export class UsersController {
@@ -83,6 +93,7 @@ export class UsersController {
       sub: user.sub,
       email: updatedEmail,
       role: user.role,
+      provider: user.provider,
       isEmailVerified: true,
       needToChangePassword: user.needToChangePassword,
     };
@@ -93,6 +104,65 @@ export class UsersController {
       success: true,
       message: 'Email updated successfully.',
       token: newToken,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
+  @Patch('password')
+  async updatePassword(
+    @currentUser() user: AccessJWTPayload,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ) {
+    const { sub, email, jti, exp, provider, needToChangePassword } = user;
+    const { currentPassword, newPassword } = updatePasswordDto;
+
+    if (provider !== 'local' && needToChangePassword) {
+      throw new BadRequestException(
+        'Password change is not allowed for social login users. Set a password instead.',
+      );
+    }
+
+    await this.usersService.updatePassword(
+      sub,
+      currentPassword,
+      newPassword,
+      email,
+      jti!,
+      exp! - Math.floor(Date.now() / 1000),
+    );
+
+    return {
+      success: true,
+      message: 'Password updated successfully.',
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
+  @Patch('set-password')
+  async setPassword(
+    @currentUser() user: AccessJWTPayload,
+    @Body() setPasswordDto: SetPasswordDto,
+  ) {
+    const { sub, email, provider } = user;
+    const { newPassword } = setPasswordDto;
+
+    if (provider === 'local') {
+      throw new BadRequestException(
+        'This endpoint is not allowed for local users.',
+      );
+    }
+
+    if (user.needToChangePassword === false) {
+      throw new BadRequestException(
+        'Password is already set. Use the update password endpoint instead.',
+      );
+    }
+
+    await this.usersService.setPassword(sub, newPassword, email);
+
+    return {
+      success: true,
+      message: 'Password set successfully.',
     };
   }
 }
