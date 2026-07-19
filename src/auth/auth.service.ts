@@ -313,7 +313,7 @@ export class AuthService {
       await this.outboxService.createEvent(tx, {
         aggregateId: userId,
         aggregateType: 'user',
-        eventType: 'user_registered',
+        eventType: 'email-verification-requested',
         payload: {
           email,
           verificationToken: token,

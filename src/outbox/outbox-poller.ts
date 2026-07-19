@@ -59,6 +59,30 @@ export class OutboxPoller {
           token: event.payload.resetToken,
         });
         break;
+      case 'email-verification-requested':
+        await this.notificationService.enqueueEmailVerification({
+          to: event.payload.email,
+          token: event.payload.token,
+        });
+        break;
+      case 'email-update-requested':
+        await this.notificationService.enqueueEmailUpdate({
+          to: event.payload.email,
+          token: event.payload.token,
+        });
+        break;
+      case 'password-changed':
+        await this.notificationService.enqueuePasswordChange({
+          email: event.payload.email,
+        });
+        break;
+      case 'password-set':
+        await this.notificationService.enqueueEmailSetPassword({
+          email: event.payload.email,
+        });
+        break;
+      default:
+        this.logger.warn(`Unhandled outbox event type: ${event.eventType}`);
     }
   }
 }

@@ -23,6 +23,7 @@ import { currentUser } from '../common/decorators/currentUser.decorator';
 import type { AccessJWTPayload } from '../common/interfaces/jwt.interface';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from '../../generated/prisma/client';
+import { Cookies } from '../common/decorators/cookie.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -86,14 +87,11 @@ export class AuthController {
     };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('refresh')
   async refreshToken(
-    @Req() req: Request,
+    @Cookies('refreshToken') token: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const token = req.cookies['refreshToken'];
-
     if (!token) {
       throw new BadRequestException('Refresh token is missing');
     }
@@ -107,7 +105,7 @@ export class AuthController {
 
     this.tokenUtils.sendRefreshToken(res, newRefreshToken);
 
-    return { success: true, accessToken: newAccessToken };
+    return { success: true, token: newAccessToken };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -115,10 +113,8 @@ export class AuthController {
   async logout(
     @currentUser() user: AccessJWTPayload,
     @Res({ passthrough: true }) res: Response,
-    @Req() req: Request,
+    @Cookies('refreshToken') token: string,
   ) {
-    const token = req.cookies['refreshToken'];
-
     if (!token) {
       throw new BadRequestException('Refresh token is missing');
     }

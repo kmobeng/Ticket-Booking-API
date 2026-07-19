@@ -13,7 +13,7 @@ export class NeedToChangePasswordGuard implements CanActivate {
       throw new ForbiddenException('User not found in request');
     }
 
-    if (!user.needToChangePassword) {
+    if (user.needToChangePassword) {
       throw new ForbiddenException(
         'Please set a password to access this resource',
       );

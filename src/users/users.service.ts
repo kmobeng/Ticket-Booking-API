@@ -81,7 +81,7 @@ export class UsersService {
       await this.outboxService.createEvent(tx, {
         aggregateType: 'user',
         aggregateId: userId,
-        eventType: 'EmailUpdateRequested',
+        eventType: 'email-update-requested',
         payload: { email, token },
       });
     });

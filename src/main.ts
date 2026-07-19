@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './common/interceptors/logger.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exception.filter';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +18,8 @@ async function bootstrap() {
       disableErrorMessages: process.env.NODE_ENV === 'production', // Disable detailed error messages in production for security reasons
     }),
   );
+
+  app.use(cookieParser());
 
   app.setGlobalPrefix('api/v1', {
     exclude: ['/'],

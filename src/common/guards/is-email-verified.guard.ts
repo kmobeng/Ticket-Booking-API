@@ -13,7 +13,7 @@ export class IsEmailVerifiedGuard implements CanActivate {
       throw new ForbiddenException('User not found in request');
     }
 
-    if (!user.emailVerified) {
+    if (!user.isEmailVerified) {
       throw new ForbiddenException(
         'Please verify your email address to access this resource',
       );

@@ -70,7 +70,7 @@ export class UsersController {
     return {
       success: true,
       message:
-        'Email update requested. Please check your email for verification.',
+        'Email update requested. Please check your new email for verification.',
     };
   }
 
