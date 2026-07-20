@@ -10,6 +10,7 @@ import { OutboxModule } from './outbox/outbox.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
+import { OrganizerModule } from './organizer/organizer.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CommonModule } from './common/common.module';
     OutboxModule,
     UsersModule,
     CommonModule,
+    OrganizerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -19,7 +19,7 @@ import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import bcrypt from 'bcrypt';
-import { currentUser } from '../common/decorators/currentUser.decorator';
+import { CurrentUser } from '../common/decorators/currentUser.decorator';
 import type { AccessJWTPayload } from '../common/interfaces/jwt.interface';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from '../../generated/prisma/client';
@@ -111,7 +111,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   async logout(
-    @currentUser() user: AccessJWTPayload,
+    @CurrentUser() user: AccessJWTPayload,
     @Res({ passthrough: true }) res: Response,
     @Cookies('refreshToken') token: string,
   ) {
@@ -169,7 +169,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('request-email-verification')
-  async requestEmailVerification(@currentUser() user: AccessJWTPayload) {
+  async requestEmailVerification(@CurrentUser() user: AccessJWTPayload) {
     if (user.isEmailVerified) {
       throw new BadRequestException('Email is already verified');
     }
@@ -190,7 +190,7 @@ export class AuthController {
   @Post('verify-email/:token')
   async verifyEmail(
     @Param('token') token: string,
-    @currentUser() user: AccessJWTPayload,
+    @CurrentUser() user: AccessJWTPayload,
   ) {
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 

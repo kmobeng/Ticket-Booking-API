@@ -8,7 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
-import { currentUser } from '../common/decorators/currentUser.decorator';
+import { CurrentUser } from '../common/decorators/currentUser.decorator';
 import type { AccessJWTPayload } from '../common/interfaces/jwt.interface';
 import { UsersService } from './users.service';
 import { IsEmailVerifiedGuard } from '../common/guards/is-email-verified.guard';
@@ -28,7 +28,7 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfile(@currentUser() user: AccessJWTPayload) {
+  async getProfile(@CurrentUser() user: AccessJWTPayload) {
     const userId = user.sub;
 
     const userProfile = await this.usersService.findById(userId);
@@ -42,7 +42,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
   @Patch('profile')
   async updateProfile(
-    @currentUser() user: AccessJWTPayload,
+    @CurrentUser() user: AccessJWTPayload,
     @Body() updateMeDto: UpdateMeDto,
   ) {
     const userId = user.sub;
@@ -59,7 +59,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
   @Patch('email')
   async updateEmail(
-    @currentUser() user: AccessJWTPayload,
+    @CurrentUser() user: AccessJWTPayload,
     @Body() updateEmailDto: UpdateEmailDto,
   ) {
     const userId = user.sub;
@@ -77,7 +77,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
   @Patch('verify-email-update/:token')
   async verifyEmailUpdate(
-    @currentUser() user: AccessJWTPayload,
+    @CurrentUser() user: AccessJWTPayload,
     @Param('token') token: string,
   ) {
     const { sub, exp, jti } = user;
@@ -110,7 +110,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
   @Patch('password')
   async updatePassword(
-    @currentUser() user: AccessJWTPayload,
+    @CurrentUser() user: AccessJWTPayload,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
     const { sub, email, jti, exp, provider, needToChangePassword } = user;
@@ -137,10 +137,10 @@ export class UsersController {
     };
   }
 
-  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
+  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard)
   @Patch('set-password')
   async setPassword(
-    @currentUser() user: AccessJWTPayload,
+    @CurrentUser() user: AccessJWTPayload,
     @Body() setPasswordDto: SetPasswordDto,
   ) {
     const { sub, email, provider } = user;
