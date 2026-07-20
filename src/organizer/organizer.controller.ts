@@ -1,4 +1,10 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { OrganizerService } from './organizer.service';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { IsEmailVerifiedGuard } from '../common/guards/is-email-verified.guard';
@@ -19,6 +25,11 @@ export class OrganizerController {
     @CurrentUser() user: AccessJWTPayload,
   ) {
     const userId = user.sub;
+    const role = user.role;
+
+    if (role === 'ORGANIZER') {
+      throw new BadRequestException('User is already an organizer');
+    }
     const { businessName } = applyDto;
 
     const organizer = await this.organizerService.applyForOrganizer(

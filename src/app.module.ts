@@ -11,6 +11,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { OrganizerModule } from './organizer/organizer.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { OrganizerModule } from './organizer/organizer.module';
     UsersModule,
     CommonModule,
     OrganizerModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
