@@ -119,8 +119,8 @@ export class AdminService {
       });
 
       await this.outboxService.createEvent(tx, {
-        aggregateType: 'user',
-        aggregateId: organizerExist.userId,
+        aggregateType: 'organizer',
+        aggregateId: organizerExist.id,
         eventType: 'organizer-verified',
         payload: {
           email: userUpdate.email,
@@ -161,8 +161,8 @@ export class AdminService {
       });
 
       await this.outboxService.createEvent(tx, {
-        aggregateType: 'user',
-        aggregateId: organizerExist.userId,
+        aggregateType: 'organizer',
+        aggregateId: organizerExist.id,
         eventType: 'organizer-unverified',
         payload: {
           email: userUpdate.email,

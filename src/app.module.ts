@@ -12,6 +12,8 @@ import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { OrganizerModule } from './organizer/organizer.module';
 import { AdminModule } from './admin/admin.module';
+import { EventModule } from './event/event.module';
+import { TicketTierModule } from './ticket-tier/ticket-tier.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { AdminModule } from './admin/admin.module';
     CommonModule,
     OrganizerModule,
     AdminModule,
+    EventModule,
+    TicketTierModule,
   ],
   controllers: [AppController],
   providers: [AppService],

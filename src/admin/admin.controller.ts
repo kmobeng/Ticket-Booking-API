@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { IsEmailVerifiedGuard } from '../common/guards/is-email-verified.guard';
@@ -78,7 +85,7 @@ export class AdminController {
     NeedToChangePasswordGuard,
   )
   @Roles(Role.ADMIN)
-  @Get('organizers/:id/verify')
+  @Patch('organizers/:id/verify')
   async verifyOrganizer(@Param('id') organizerId: string) {
     const organizer = await this.adminService.verifyOrganizer(organizerId);
     return {
@@ -95,7 +102,7 @@ export class AdminController {
     NeedToChangePasswordGuard,
   )
   @Roles(Role.ADMIN)
-  @Get('organizers/:id/unverify')
+  @Patch('organizers/:id/unverify')
   async unverifyOrganizer(@Param('id') organizerId: string) {
     const organizer = await this.adminService.unverifyOrganizer(organizerId);
     return {
