@@ -1,10 +1,4 @@
-// title String
-//   description String?
-//   venue String
-//   startDate DateTime
-//   endDate DateTime
-
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsDate, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateEventDto {
   @IsNotEmpty({ message: 'Title is required' })
@@ -19,8 +13,10 @@ export class CreateEventDto {
   venue!: string;
 
   @IsNotEmpty({ message: 'Start date is required' })
+  @IsDate({ message: 'Start date must be a valid date' })
   startDate!: Date;
 
   @IsNotEmpty({ message: 'End date is required' })
+  @IsDate({ message: 'End date must be a valid date' })
   endDate!: Date;
 }
