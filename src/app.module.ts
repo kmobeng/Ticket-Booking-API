@@ -14,11 +14,22 @@ import { OrganizerModule } from './organizer/organizer.module';
 import { AdminModule } from './admin/admin.module';
 import { EventModule } from './event/event.module';
 import { TicketTierModule } from './ticket-tier/ticket-tier.module';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { CustomThrottlerGuard } from './common/guards/common-throttler.guard';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60 * 1000, //1 minute
+          limit: 200,
+        },
+      ],
     }),
     ScheduleModule.forRoot(),
     AuthModule,
@@ -34,6 +45,12 @@ import { TicketTierModule } from './ticket-tier/ticket-tier.module';
     TicketTierModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: CustomThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

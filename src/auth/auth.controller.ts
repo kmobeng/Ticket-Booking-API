@@ -24,6 +24,7 @@ import type { AccessJWTPayload } from '../common/interfaces/jwt.interface';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from '../../generated/prisma/client';
 import { Cookies } from '../common/decorators/cookie.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -32,6 +33,7 @@ export class AuthController {
     private readonly tokenUtils: TokenUtils,
   ) {}
 
+  @Throttle({ default: { limit: 5, ttl: 15 * 60 * 1000 } })
   @Post('register')
   async register(
     @Body() registerDto: RegisterDto,
@@ -58,6 +60,7 @@ export class AuthController {
     };
   }
 
+  @Throttle({ default: { limit: 5, ttl: 15 * 60 * 1000 } })
   @Post('login')
   async login(
     @Body() body: LoginDto,
@@ -137,6 +140,7 @@ export class AuthController {
     return { success: true, message: 'Logged out successfully' };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60 * 60 * 1000 } })
   @Post('forgot-password')
   async forgotPassword(@Body() body: ForgotPasswordDto) {
     await this.authService.forgotPasswordService(body.email);
@@ -148,6 +152,7 @@ export class AuthController {
     };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60 * 60 * 1000 } })
   @Post('reset-password/:token')
   async resetPassword(
     @Body() body: ResetPasswordDto,

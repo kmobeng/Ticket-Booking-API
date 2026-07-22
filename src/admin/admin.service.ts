@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { OutboxService } from '../outbox/outbox.service';
-import { emit } from 'process';
 
 @Injectable()
 export class AdminService {
