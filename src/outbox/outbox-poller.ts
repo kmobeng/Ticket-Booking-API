@@ -81,6 +81,18 @@ export class OutboxPoller {
           email: event.payload.email,
         });
         break;
+      case 'organizer-verified':
+        await this.notificationService.enqueueOrganizerVerified({
+          email: event.payload.email,
+          name: event.payload.name,
+        });
+        break;
+      case 'organizer-unverified':
+        await this.notificationService.enqueueOrganizerUnverified({
+          email: event.payload.email,
+          name: event.payload.name,
+        });
+        break;
       default:
         this.logger.warn(`Unhandled outbox event type: ${event.eventType}`);
     }

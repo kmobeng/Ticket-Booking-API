@@ -79,6 +79,30 @@ export class NotificationProcessor extends WorkerHost {
         });
         break;
       }
+      case 'send-organizer-verified': {
+        const { email, name } = job.data;
+
+        const message = `Congratulations ${name}! Your application for organizer status has been verified successfully. You can now access all the features available to organizers.`;
+
+        await this.emailService.sendEmailDev({
+          email: email,
+          subject: 'Organizer Verification Successful',
+          message: message,
+        });
+        break;
+      }
+      case 'send-organizer-unverified': {
+        const { email, name } = job.data;
+
+        const message = `Dear ${name}, your application for organizer status has been unverified. If you have any questions, please contact support. We apologize for any inconvenience this may cause.`;
+
+        await this.emailService.sendEmailDev({
+          email: email,
+          subject: 'Organizer Verification Unsuccessful',
+          message: message,
+        });
+        break;
+      }
       default:
         this.logger.warn(`No handler for job name: ${job.name}`);
     }

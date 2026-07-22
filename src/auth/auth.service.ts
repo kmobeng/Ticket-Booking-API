@@ -316,7 +316,7 @@ export class AuthService {
         eventType: 'email-verification-requested',
         payload: {
           email,
-          verificationToken: token,
+          token: token,
         },
       });
     });

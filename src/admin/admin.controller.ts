@@ -4,24 +4,37 @@ import { JwtAuthGuard } from '../common/guards/auth.guard';
 import { IsEmailVerifiedGuard } from '../common/guards/is-email-verified.guard';
 import { NeedToChangePasswordGuard } from '../common/guards/need-to-change-password.guard';
 import { Roles } from '../common/decorators/role.decorator';
+import { Role } from '../../generated/prisma/client';
+import { RoleGuard } from '../common/guards/role.guard';
 
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
-  @Roles('ADMIN')
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ADMIN)
   @Get('users')
   async getAllUsers() {
     const users = await this.adminService.getAllUsers();
     return {
       success: true,
+      result: users.length,
       data: users,
     };
   }
 
-  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
-  @Roles('ADMIN')
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ADMIN)
   @Get('users/:id')
   async getUserById(@Param('id') id: string) {
     const user = await this.adminService.getUserById(id);
@@ -31,18 +44,25 @@ export class AdminController {
     };
   }
 
-  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
-  @Roles('ADMIN')
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ADMIN)
   @Get('organizers')
   async getAllOrganizers(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('search') search: string = '',
+    @Query('verified') verified: string = '',
   ) {
     const organizers = await this.adminService.getAllOrganizers(
       search,
       page,
       limit,
+      verified,
     );
 
     return {
@@ -51,8 +71,13 @@ export class AdminController {
     };
   }
 
-  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
-  @Roles('ADMIN')
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ADMIN)
   @Get('organizers/:id/verify')
   async verifyOrganizer(@Param('id') organizerId: string) {
     const organizer = await this.adminService.verifyOrganizer(organizerId);
@@ -63,8 +88,13 @@ export class AdminController {
     };
   }
 
-  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
-  @Roles('ADMIN')
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ADMIN)
   @Get('organizers/:id/unverify')
   async unverifyOrganizer(@Param('id') organizerId: string) {
     const organizer = await this.adminService.unverifyOrganizer(organizerId);
@@ -75,8 +105,13 @@ export class AdminController {
     };
   }
 
-  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
-  @Roles('ADMIN')
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ADMIN)
   @Get('events')
   async listAllEvents() {
     const events = await this.adminService.listAllEvents();
@@ -86,8 +121,13 @@ export class AdminController {
     };
   }
 
-  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
-  @Roles('ADMIN')
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ADMIN)
   @Get('events/:id')
   async listAllEventsByOrganizer(@Param('id') organizerId: string) {
     const events =
@@ -98,8 +138,13 @@ export class AdminController {
     };
   }
 
-  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
-  @Roles('ADMIN')
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ADMIN)
   @Get('orders')
   async listAllOrders() {
     const orders = await this.adminService.listAllOrders();
