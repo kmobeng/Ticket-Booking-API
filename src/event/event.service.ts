@@ -9,6 +9,9 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventStatus } from '../../generated/prisma/enums';
 import { CreateTierDto } from './dto/create-tier.dto';
+import { OutboxService } from '../outbox/outbox.service';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 
 type EventDashboard = {
   EventId: string;
@@ -26,7 +29,11 @@ type EventDashboard = {
 
 @Injectable()
 export class EventService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    @InjectQueue('event') private eventQueue: Queue,
+    private readonly prismaService: PrismaService,
+    private readonly outboxService: OutboxService,
+  ) {}
 
   async createEvent(createEventDto: CreateEventDto, userId: string) {
     const organizer = await this.prismaService.organizer.findUnique({
@@ -86,6 +93,10 @@ export class EventService {
       },
     });
 
+    if (updateEventDto.endDate) {
+      await this.cancelScheduledClose(eventId);
+    }
+
     return event;
   }
 
@@ -133,11 +144,29 @@ export class EventService {
     }
 
     // Publish the event
-    const event = await this.prismaService.event.update({
-      where: { id: eventId },
-      data: {
-        status: EventStatus.PUBLISHED,
-      },
+    const event = await this.prismaService.$transaction(async (tx) => {
+      const event = await this.prismaService.event.update({
+        where: { id: eventId },
+        data: {
+          status: EventStatus.PUBLISHED,
+        },
+      });
+
+      const ttl =
+        Math.floor(eventExist.endDate.getTime() / 1000) -
+        Math.floor(new Date().getTime() / 1000); // Calculate TTL in seconds
+
+      await this.outboxService.createEvent(tx, {
+        aggregateType: 'Event',
+        aggregateId: event.id,
+        eventType: 'event-created',
+        payload: {
+          ttl,
+          eventId: event.id,
+        },
+      });
+
+      return event;
     });
 
     return event;
@@ -182,6 +211,8 @@ export class EventService {
         status: EventStatus.DRAFT,
       },
     });
+
+    await this.cancelScheduledClose(eventId);
 
     return event;
   }
@@ -368,5 +399,10 @@ export class EventService {
     }));
 
     return tiersWithRemainingQuantity;
+  }
+
+  private async cancelScheduledClose(eventId: string) {
+    const job = await this.eventQueue.getJob(`close-event-${eventId}`);
+    if (job) await job.remove();
   }
 }

@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { NotificationService } from '../notification/notification.service';
 import { PrismaService } from '../prisma.service';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 
 type OutboxEvent = {
   id: string;
@@ -18,6 +20,7 @@ export class OutboxPoller {
   private readonly logger = new Logger(OutboxPoller.name);
 
   constructor(
+    @InjectQueue('event') private eventQueue: Queue,
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
   ) {}
@@ -47,13 +50,13 @@ export class OutboxPoller {
 
   private async handleEvent(event: OutboxEvent) {
     switch (event.eventType) {
-      case 'user_registered':
+      case 'user-registered':
         await this.notificationService.enqueueEmailVerification({
           to: event.payload.email,
           token: event.payload.verificationToken,
         });
         break;
-      case 'password_reset_requested':
+      case 'password-reset-requested':
         await this.notificationService.enqueuePasswordReset({
           to: event.payload.email,
           token: event.payload.resetToken,
@@ -93,6 +96,17 @@ export class OutboxPoller {
           name: event.payload.name,
         });
         break;
+      case 'event-created':
+        await this.eventQueue.add(
+          'close-event',
+          { eventId: event.payload.eventId },
+          {
+            delay: Math.max(event.payload.ttl * 1000 + 5000, 0), // Add a 5-second
+            jobId: `close-event-${event.payload.eventId}`, // Unique job ID to prevent duplicates
+          },
+        );
+        break;
+
       default:
         this.logger.warn(`Unhandled outbox event type: ${event.eventType}`);
     }

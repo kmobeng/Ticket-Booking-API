@@ -37,6 +37,10 @@ export class EventController {
     @Body() createEventDto: CreateEventDto,
     @CurrentUser() user: AccessJWTPayload,
   ) {
+    if (createEventDto.startDate <= new Date()) {
+      throw new BadRequestException('Start date must be in the future');
+    }
+
     if (createEventDto.startDate >= createEventDto.endDate) {
       throw new BadRequestException('Start date must be before end date');
     }
@@ -57,7 +61,7 @@ export class EventController {
     NeedToChangePasswordGuard,
   )
   @Roles(Role.ORGANIZER)
-  @Post('update/:eventId')
+  @Patch('update/:eventId')
   async updateEvent(
     @Body() updateEventDto: UpdateEventDto,
     @CurrentUser() user: AccessJWTPayload,
@@ -156,7 +160,7 @@ export class EventController {
     NeedToChangePasswordGuard,
   )
   @Roles(Role.ORGANIZER)
-  @Get('events/:eventId/dashboard')
+  @Get('/:eventId/dashboard')
   async getEventDashboard(
     @CurrentUser() user: AccessJWTPayload,
     @Param('eventId') eventId: string,
