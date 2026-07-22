@@ -1,11 +1,4 @@
-import {
-  IsDate,
-  IsEnum,
-  isIn,
-  IsIn,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsDate, IsIn, IsOptional, IsString } from 'class-validator';
 import { EventStatus } from '../../../generated/prisma/enums';
 import { Transform, Type } from 'class-transformer';
 

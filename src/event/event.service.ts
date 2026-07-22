@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventStatus } from '../../generated/prisma/enums';
+import { CreateTierDto } from './dto/create-tier.dto';
 
 type EventDashboard = {
   EventId: string;
@@ -278,5 +279,94 @@ export class EventService {
     };
 
     return dashboard;
+  }
+
+  async createTicketTier(
+    eventId: string,
+    userId: string,
+    createTierDto: CreateTierDto,
+  ) {
+    const eventExist = await this.prismaService.event.findUnique({
+      where: { id: eventId },
+      include: {
+        organizer: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+
+    if (!eventExist) throw new NotFoundException('Event is not availble');
+
+    if (eventExist.organizer.userId !== userId)
+      throw new UnauthorizedException(
+        'You are not authorized to create tiers for this event',
+      );
+
+    if (eventExist.status === EventStatus.CLOSED)
+      throw new BadRequestException('Cannot create tiers for a closed event');
+
+    const ticketTier = await this.prismaService.ticket.create({
+      data: {
+        ...createTierDto,
+        eventId: eventExist.id,
+      },
+    });
+    return ticketTier;
+  }
+
+  async updateTicketTier(
+    userId: string,
+    tierId: string,
+    updateTierDto: Partial<CreateTierDto>,
+  ) {
+    const tierExist = await this.prismaService.ticket.findUnique({
+      where: { id: tierId },
+      include: {
+        event: {
+          select: {
+            organizer: {
+              select: {
+                userId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!tierExist) throw new NotFoundException('Tier not found');
+
+    if (tierExist.event.organizer.userId !== userId)
+      throw new UnauthorizedException(
+        'You are not authorized to update this tier',
+      );
+
+    const updatedTier = await this.prismaService.ticket.update({
+      where: { id: tierId },
+      data: {
+        ...updateTierDto,
+      },
+    });
+    return updatedTier;
+  }
+
+  async getTicketTiers(eventId: string) {
+    const eventExist = await this.prismaService.event.findUnique({
+      where: { id: eventId },
+      include: {
+        tickets: true,
+      },
+    });
+
+    if (!eventExist) throw new NotFoundException('Event is not availble');
+
+    const tiersWithRemainingQuantity = eventExist.tickets.map((tier) => ({
+      ...tier,
+      remainingQuantity: tier.quantity - tier.sold,
+    }));
+
+    return tiersWithRemainingQuantity;
   }
 }

@@ -19,6 +19,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { CurrentUser } from '../common/decorators/currentUser.decorator';
 import type { AccessJWTPayload } from '../common/interfaces/jwt.interface';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { CreateTierDto } from './dto/create-tier.dto';
 
 @Controller('event')
 export class EventController {
@@ -170,6 +171,72 @@ export class EventController {
       success: true,
       message: 'Event dashboard retrieved successfully',
       data: dashboard,
+    };
+  }
+
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ORGANIZER)
+  @Post('/:eventId/tier')
+  async createTicketTier(
+    @Param('eventId') eventId: string,
+    @Body() createTierDto: CreateTierDto,
+    @CurrentUser() user: AccessJWTPayload,
+  ) {
+    const userId = user.sub;
+    const tier = await this.eventService.createTicketTier(
+      eventId,
+      userId,
+      createTierDto,
+    );
+
+    return {
+      success: true,
+      message: 'Ticket tier created successfully',
+      data: tier,
+    };
+  }
+
+  @UseGuards(
+    JwtAuthGuard,
+    RoleGuard,
+    IsEmailVerifiedGuard,
+    NeedToChangePasswordGuard,
+  )
+  @Roles(Role.ORGANIZER)
+  @Patch('/tier/:tierId')
+  async updateTicketTier(
+    @Param('tierId') tierId: string,
+    @Body() updateTierDto: Partial<CreateTierDto>,
+    @CurrentUser() user: AccessJWTPayload,
+  ) {
+    const userId = user.sub;
+    const tier = await this.eventService.updateTicketTier(
+      userId,
+      tierId,
+      updateTierDto,
+    );
+
+    return {
+      success: true,
+      message: 'Ticket tier updated successfully',
+      data: tier,
+    };
+  }
+
+  //public list tiers of an event with remaining quantity
+  @Get('/:eventId/tier')
+  async getTicketTiers(@Param('eventId') eventId: string) {
+    const tiers = await this.eventService.getTicketTiers(eventId);
+
+    return {
+      success: true,
+      message: 'Ticket tiers retrieved successfully',
+      data: tiers,
     };
   }
 }

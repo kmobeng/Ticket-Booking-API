@@ -13,7 +13,6 @@ import { CommonModule } from './common/common.module';
 import { OrganizerModule } from './organizer/organizer.module';
 import { AdminModule } from './admin/admin.module';
 import { EventModule } from './event/event.module';
-import { TicketTierModule } from './ticket-tier/ticket-tier.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CustomThrottlerGuard } from './common/guards/common-throttler.guard';
@@ -42,7 +41,6 @@ import { CustomThrottlerGuard } from './common/guards/common-throttler.guard';
     OrganizerModule,
     AdminModule,
     EventModule,
-    TicketTierModule,
   ],
   controllers: [AppController],
   providers: [
