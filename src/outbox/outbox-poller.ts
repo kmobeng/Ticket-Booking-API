@@ -21,6 +21,7 @@ export class OutboxPoller {
 
   constructor(
     @InjectQueue('event') private eventQueue: Queue,
+    @InjectQueue('reservation') private reservationQueue: Queue,
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
   ) {}
@@ -106,7 +107,19 @@ export class OutboxPoller {
           },
         );
         break;
-
+      case 'reservation-created':
+        await this.reservationQueue.add(
+          'expire-reservation',
+          {
+            reservationId: event.payload.reservationId,
+            ticketId: event.payload.ticketId,
+          },
+          {
+            delay: Math.max(event.payload.delay + 5000, 0), // Add a 5-second buffer
+            jobId: `expire-reservation-${event.payload.reservationId}`,
+          },
+        );
+        break;
       default:
         this.logger.warn(`Unhandled outbox event type: ${event.eventType}`);
     }

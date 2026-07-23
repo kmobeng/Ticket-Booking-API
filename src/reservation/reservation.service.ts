@@ -80,12 +80,13 @@ export class ReservationService {
       });
 
       await this.outboxService.createEvent(tx, {
-        aggregateType: 'Reservation',
+        aggregateType: 'reservation',
         aggregateId: reservation.id,
-        eventType: 'ReservationCreated',
+        eventType: 'reservation-created',
         payload: {
           reservationId: reservation.id,
-          delay: 10 * 60 * 1000 + 5000, // 10 minutes in milliseconds + 5 seconds buffer
+          ticketId: reservation.ticketId,
+          delay: 10 * 1000,
         },
       });
 

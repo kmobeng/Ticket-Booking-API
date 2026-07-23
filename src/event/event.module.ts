@@ -4,6 +4,7 @@ import { EventController } from './event.controller';
 import { PrismaService } from '../prisma.service';
 import { AuthModule } from '../auth/auth.module';
 import { OutboxModule } from '../outbox/outbox.module';
+import { EventProcessor } from './event.provider';
 import { BullModule } from '@nestjs/bullmq';
 
 @Module({
@@ -20,7 +21,7 @@ import { BullModule } from '@nestjs/bullmq';
     AuthModule,
     OutboxModule,
   ],
-  providers: [EventService, PrismaService],
+  providers: [EventService, PrismaService, EventProcessor],
   controllers: [EventController],
 })
 export class EventModule {}
