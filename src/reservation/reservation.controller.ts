@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Headers,
+  Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -35,6 +36,30 @@ export class ReservationController {
       userId,
     );
 
-    return { success: true, reservation };
+    return {
+      success: true,
+      message: 'Reservation created successfully.',
+      data: reservation,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, IsEmailVerifiedGuard, NeedToChangePasswordGuard)
+  @Post('release/:reservationId')
+  async releaseReservation(
+    @CurrentUser() user: AccessJWTPayload,
+    @Param('reservationId') reservationId: string,
+  ) {
+    const userId = user.sub;
+
+    const reservation = await this.reservationService.releaseReservation(
+      reservationId,
+      userId,
+    );
+
+    return {
+      success: true,
+      message: 'Reservation released successfully.',
+      data: reservation,
+    };
   }
 }

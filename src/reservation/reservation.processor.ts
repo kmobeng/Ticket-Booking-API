@@ -14,9 +14,6 @@ export class ReservationProcessor extends WorkerHost {
   async process(job: Job): Promise<void> {
     switch (job.name) {
       case 'expire-reservation': {
-        this.logger.debug(
-          `Processing job: ${job.name} for reservationId: ${job.data.reservationId}`,
-        );
         const { reservationId, ticketId } = job.data;
         await this.prismaService.reservation.updateMany({
           where: { id: reservationId, status: ReservationStatus.HELD },
