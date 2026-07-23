@@ -16,6 +16,7 @@ import { EventModule } from './event/event.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CustomThrottlerGuard } from './common/guards/common-throttler.guard';
+import { ReservationModule } from './reservation/reservation.module';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { CustomThrottlerGuard } from './common/guards/common-throttler.guard';
       throttlers: [
         {
           ttl: 60 * 1000, //1 minute
-          limit: 200,
+          limit: 200000000000,
         },
       ],
     }),
@@ -41,6 +42,7 @@ import { CustomThrottlerGuard } from './common/guards/common-throttler.guard';
     OrganizerModule,
     AdminModule,
     EventModule,
+    ReservationModule,
   ],
   controllers: [AppController],
   providers: [
